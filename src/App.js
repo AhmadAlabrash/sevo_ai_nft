@@ -3,7 +3,9 @@ import { NFTStorage, File } from 'nft.storage'
 import { Buffer } from 'buffer';
 import { ethers } from 'ethers';
 import axios from 'axios';
-import logo from "./logo.png";
+import { Input , message } from "antd";
+
+import "./App.css";
 
 
 
@@ -18,34 +20,78 @@ import NFT from './abis/NFT.json'
 
 
 function App() {
+  let url 
+  const [messageApi, contextHolder] = message.useMessage();
+
   const address = '0x7bd1efa9d0dd01b5078c2081f3d4f4f24fb54dcf'
   const [nft2 , setNft2 ] = useState(null)
   const [provider, setProvider] = useState(null)
+  const [network, setNetwork] = useState(null)
+
   const [account, setAccount] = useState(null)
 
   const [name, setName] = useState('')
   const [isWaiting, setIsWaiting] = useState(false)
+  const [isWaitingMinting, setIsWaitingMintting] = useState(false)
 
   const [cretedImage, setcretedImage] = useState('')
   const [imag, setImg] = useState('')
 
+  
+
   const [url2, setUrl2] = useState('')
   const [decription, setDecription] = useState('')
+  const [txHash , settxHash] = useState(false);
 
   const loadBlockchainData = async () => {
     const provider = new ethers.providers.Web3Provider(window.ethereum)
     setProvider(provider)
+
+    setNetwork(window.ethereum.chainId)
+  
 
     const nftcontract = new ethers.Contract(address , NFT , provider)
     setNft2(nftcontract)
 
   }
 
+
+  async function seeHashOnScan(){
+    const network = 137 ;
+
+    switch (network){
+      case 137 : 
+      url = `https://polygonscan.com/tx/${txHash}`;
+      break;
+      case 1 : 
+      url = `https://etherscan.io/tx/${txHash}`;
+      break;
+      case 56 : 
+      url = `https://bscscan.com/tx/${txHash}`;
+      break;
+      case 42161 : 
+      url = `https://arbiscan.io/tx/${txHash}`;
+      break;
+      case 43114 : 
+      url = `https://snowtrace.io/tx/${txHash}`;
+      break;
+  
+    }
+     
+    // Open the URL in a new tab
+    await window.open(url, '_blank');
+  }
+
   const createImageAndUpload = async ()=>{
 
-    if (name === "" || decription === "") {
-      window.alert("Please provide a name and description")
-      return
+    if (decription === null || decription === "") {
+      messageApi.destroy();
+      messageApi.open({
+        type: 'error',
+        content: 'Please Enter A Describtion For Your Image',
+        duration: 1.5,
+      })
+            return
     }
 
     setIsWaiting(true)
@@ -66,14 +112,30 @@ function App() {
 
   const mintImage = async (e)=>{
 
-    if (account === null ) {
-      window.alert("Please Connect your wallet")
-      return
+    if (account === null || account === "" || !imag || decription === null || decription === "" ) {
+      messageApi.destroy();
+      messageApi.open({
+        type: 'error',
+        content: 'Please Connect Your Wallet Firstly ',
+        duration: 1.5,
+      })     
+       return
+    }
+
+    if(network != '0x89' || network != 0x89 ){
+      messageApi.destroy();
+      messageApi.open({
+        type: 'error',
+        content: 'Please Click On Polygon Logo To Change Your Network ',
+        duration: 2,
+      })     
+      return;
+
     }
 
     e.preventDefault()
 
-    setIsWaiting(true)
+    
     
     if(cretedImage != '') {
       await mint(cretedImage)
@@ -84,7 +146,7 @@ function App() {
       console.log('Image is not created ');
       window.alert("Please Create an Image .")
     }
-    setIsWaiting(false)
+   
 
       
 
@@ -119,7 +181,8 @@ function App() {
 
     const base64data = Buffer.from(data).toString('base64')
     const img = `data:${type};base64,` + base64data // <-- This is so we can render it on the page
-    setImg(img)
+    await setImg(img)
+    await console.log(img)
 
     return data
   }
@@ -131,7 +194,7 @@ function App() {
 
     const {ipnft}= await nftstor.store({
       image : new File([imgdata] , 'image.jpeg' , {type : "image/jpeg"}) ,
-      name : name ,
+      name : 'image Generated' ,
       description : decription
     })
 
@@ -148,21 +211,47 @@ function App() {
     console.log('Waiting for Mint ...')
     
     try{
+     await setIsWaitingMintting(true)
       const acc = await provider.getSigner()
       if(acc){
 
         const trx = await nft2.connect(acc).mint(tokenuri )
         await trx.wait()
+        await settxHash(trx.hash)
   
         console.log('NFT has been minted :)');
-        window.alert("Congratulations ... NFT has been minted :) \nYou can see it by import nft button in metamask wallet .\nHere is the contract Address : 0x7bd1efa9d0dd01b5078c2081f3d4f4f24fb54dcf  ")
+        messageApi.destroy();
+        messageApi.open({
+            type: 'success',
+            content: `Transaction Successful , Click Here To View Transction Details`,
+            onClick:() => seeHashOnScan(),
+            duration: 4,
+          })
       }
       else{
+        await setIsWaitingMintting(false)
+
+        messageApi.destroy();
+        messageApi.open({
+            type: 'error',
+            content: `Transaction Failed ,You Rejected The Sign Message`,
+           
+            duration: 2,
+          })
         console.log('You reject to sign this transction .')
       }
     }
     catch(err){
+      await setIsWaitingMintting(false)
+
       console.log(err)
+      messageApi.destroy();
+      messageApi.open({
+          type: 'error',
+          content: `Transaction Failed ,You Rejected The Sign Message`,
+         
+          duration: 2,
+        })
     }
 
 
@@ -184,32 +273,47 @@ function App() {
     loadBlockchainData()
   }, [])
 
+  useEffect(()=>{
+
+    messageApi.destroy();
+
+    if(isWaitingMinting){
+      messageApi.open({
+        type: 'loading',
+        content: 'Transaction is Pending...',
+        duration: 0,
+      })
+    }    
+
+  },[isWaitingMinting])
+
   return (
     <>
-    <header>
-       <img src={logo} alt="logo" className="logo" />
-       <Navigation account={account} setAccount={setAccount} />
-    </header>
+          {contextHolder}
+
+    
+       <Navigation account={account} setAccount={setAccount} network={network} setNetwork={setNetwork}/>
     
       
      <div className ="form">
-        <form onSubmit={mintImage}>
-          <input type='text' placeholder='Create a Name ... 'onChange={(e)=> {setName(e.target.value)}}></input>
-          <input type='text' placeholder='Create a decerption ... 'onChange={(e)=> {setDecription(e.target.value)}}></input>
-          <input type = 'button' value='Create Image' onClick={createImageAndUpload}></input>
-          <input type='submit' value=' Mint NFT '></input>
-        </form>
+
+      <div className="fr">
+       
+          <Input style={{ fontSize : '16px'}} type='text' placeholder='Create a decerption ... 'onChange={(e)=> {setDecription(e.target.value)}}/>
+          <input className='b1' type = 'button' value='Create Image' onClick={createImageAndUpload}></input>
+          <input className='b2' type='submit' value=' Mint NFT ' onClick={mintImage}></input>
+          </div> 
         
 
         <div className="image">
-        {!isWaiting ? (
+        {!isWaiting && imag ? (
             <img src={imag} alt="AI generated image" />
-          ) : (
+          ) : (isWaiting) ?(
             <div className="image__placeholder">
               <Spinner animation="border" />
               
             </div>
-          ) }
+          ):('Please write a description') }
         </div>
 
      </div>
