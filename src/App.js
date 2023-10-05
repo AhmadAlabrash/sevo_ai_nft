@@ -116,13 +116,13 @@ function App() {
       messageApi.destroy();
       messageApi.open({
         type: 'error',
-        content: 'Please Connect Your Wallet Firstly ',
+        content: 'Please Connect Your Wallet Firstly And Create An Image ',
         duration: 1.5,
       })     
        return
     }
 
-    if(network != '0x89' || network != 0x89 || network != '0x13881' || network != 0x13881){
+    if(network != '0x89' || network != 0x89 ){
       messageApi.destroy();
       messageApi.open({
         type: 'error',
