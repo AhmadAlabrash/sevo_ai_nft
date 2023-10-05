@@ -23,7 +23,7 @@ function App() {
   let url 
   const [messageApi, contextHolder] = message.useMessage();
 
-  const address = '0x7bd1efa9d0dd01b5078c2081f3d4f4f24fb54dcf'
+  const address = '0x08bA72816A61C1E09046E127EFA807008604A6F2'
   const [nft2 , setNft2 ] = useState(null)
   const [provider, setProvider] = useState(null)
   const [network, setNetwork] = useState(null)
