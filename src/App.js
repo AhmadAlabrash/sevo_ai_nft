@@ -57,26 +57,8 @@ function App() {
 
 
   async function seeHashOnScan(){
-    const network = 137 ;
-
-    switch (network){
-      case 137 : 
-      url = `https://polygonscan.com/tx/${txHash}`;
-      break;
-      case 1 : 
-      url = `https://etherscan.io/tx/${txHash}`;
-      break;
-      case 56 : 
-      url = `https://bscscan.com/tx/${txHash}`;
-      break;
-      case 42161 : 
-      url = `https://arbiscan.io/tx/${txHash}`;
-      break;
-      case 43114 : 
-      url = `https://snowtrace.io/tx/${txHash}`;
-      break;
-  
-    }
+    
+    url = `https://polygonscan.com/tx/${txHash}`
      
     // Open the URL in a new tab
     await window.open(url, '_blank');
@@ -218,14 +200,14 @@ function App() {
         const trx = await nft2.connect(acc).mint(tokenuri )
         await trx.wait()
         await settxHash(trx.hash)
-  
+        console.log(trx.hash);
         console.log('NFT has been minted :)');
         messageApi.destroy();
         messageApi.open({
             type: 'success',
             content: `Transaction Successful , Click Here To View Transction Details`,
             onClick:() => seeHashOnScan(),
-            duration: 4,
+            duration: 5,
           })
       }
       else{
