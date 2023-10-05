@@ -22,7 +22,8 @@ import NFT from './abis/NFT.json'
 function App() {
   let url 
   const [messageApi, contextHolder] = message.useMessage();
-
+  //0xfa128ebb9770074c20efa76a0c95157ef0b1f476
+  //0x08bA72816A61C1E09046E127EFA807008604A6F2
   const address = '0x08bA72816A61C1E09046E127EFA807008604A6F2'
   const [nft2 , setNft2 ] = useState(null)
   const [provider, setProvider] = useState(null)
@@ -56,9 +57,26 @@ function App() {
   }
 
 
-  async function seeHashOnScan(){
-    
-    url = `https://polygonscan.com/tx/${txHash}`
+  async function seeHashOnScan(_hash){
+ 
+       switch (network) {
+      case '0x13881' : 
+        url = `https://mumbai.polygonscan.com/tx/${_hash}`
+        break ;
+
+      case '0x89' : 
+      url = `https://polygonscan.com/tx/${_hash}`
+      break ;   
+
+      case 0x13881 : 
+      url = `https://mumbai.polygonscan.com/tx/${_hash}`
+      break ;
+
+      case 0x89 : 
+      url = `https://polygonscan.com/tx/${_hash}`
+      break ;  
+       
+    }
      
     // Open the URL in a new tab
     await window.open(url, '_blank');
@@ -104,7 +122,7 @@ function App() {
        return
     }
 
-    if(network != '0x89' || network != 0x89 ){
+    if(network != '0x89' || network != 0x89 || network != '0x13881' || network != 0x13881){
       messageApi.destroy();
       messageApi.open({
         type: 'error',
@@ -164,7 +182,6 @@ function App() {
     const base64data = Buffer.from(data).toString('base64')
     const img = `data:${type};base64,` + base64data // <-- This is so we can render it on the page
     await setImg(img)
-    await console.log(img)
 
     return data
   }
@@ -176,7 +193,7 @@ function App() {
 
     const {ipnft}= await nftstor.store({
       image : new File([imgdata] , 'image.jpeg' , {type : "image/jpeg"}) ,
-      name : 'image Generated' ,
+      name : 'Rslan NFT (RSL)' ,
       description : decription
     })
 
@@ -206,9 +223,13 @@ function App() {
         messageApi.open({
             type: 'success',
             content: `Transaction Successful , Click Here To View Transction Details`,
-            onClick:() => seeHashOnScan(),
-            duration: 5,
+            onClick:() => seeHashOnScan(trx.hash),
+            duration: 9,
           })
+          const alertTimeout = setTimeout(async() => {
+            await setIsWaitingMintting(false)
+          },9000);   
+          
       }
       else{
         await setIsWaitingMintting(false)
@@ -253,6 +274,7 @@ function App() {
 
   useEffect(() => {
     loadBlockchainData()
+    console.log(network)
   }, [])
 
   useEffect(()=>{
